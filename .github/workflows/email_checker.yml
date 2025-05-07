@@ -1,0 +1,13 @@
+name: PR email addresses checker
+
+on: pull_request
+
+permissions:
+  pull-requests: read
+
+jobs:
+  pr-check-emails:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR emails
+        uses: qualcomm/commit-emails-check-action@main
