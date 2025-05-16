@@ -1,4 +1,4 @@
-name: PR email addresses checker
+name: PR email address checker
 
 on: pull_request
 
