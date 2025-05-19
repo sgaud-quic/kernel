@@ -5,7 +5,7 @@ jobs:
   runner:
     runs-on: [self-hosted, kernel-prd-u2404-x64-large-od-ephem]
     steps:
-      - name: Time
+      - name: Times
         run: echo "Today date $(date)."
   
   goodbye:
