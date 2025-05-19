@@ -1,0 +1,32 @@
+name: Push Pipeline
+on:
+
+ # push:
+ #   branches:
+ #     - main
+ # pull_request:
+ #   branches:
+ #     - main
+   workflow_dispatch:
+
+jobs:
+  runner:
+    runs-on: [self-hosted, kernel-prd-u2404-x64-large-od-ephem]
+    steps:
+      - name: Time
+        run: echo "Today date $(date)."
+  
+  goodbye:
+    runs-on: [self-hosted, kernel-prd-u2204-x64-large-od-ephem]
+    steps:
+      - name: goodbye world
+        run: echo "GoodBye World"
+
+  Testing:
+    runs-on: [self-hosted, kernel-prd-u2404-x64-large-od-ephem]
+    steps:
+      - name: docker test
+        run: |
+         docker --version
+         sleep 5m
+         sudo docker run hello-world
