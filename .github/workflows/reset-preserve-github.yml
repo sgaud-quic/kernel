@@ -1,0 +1,14 @@
+name: Force Reset While Preserving .github
+
+on:
+  workflow_dispatch:  # You can trigger this manually
+
+jobs:
+  reset-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for full history and reset
