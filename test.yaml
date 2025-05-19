@@ -1,13 +1,5 @@
 name: Push Pipeline
-on:
-
- # push:
- #   branches:
- #     - main
- # pull_request:
- #   branches:
- #     - main
-   workflow_dispatch:
+on: push
 
 jobs:
   runner:
