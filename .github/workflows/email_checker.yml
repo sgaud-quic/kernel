@@ -1,6 +1,8 @@
 name: PR email addresses checker
 
-on: pull_request
+on:
+  pull_request:
+    branches: [ qcom-next-staging ]
 
 jobs:
   pr-check-emails:
