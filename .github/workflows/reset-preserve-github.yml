@@ -1,7 +1,7 @@
 name: Force Reset While Preserving .github
 
 on:
-  workflow_dispatch:  # You can trigger this manually
+  pull_request:  # You can trigger this manually
 
 jobs:
   reset-job:
