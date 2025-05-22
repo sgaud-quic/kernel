@@ -1,5 +1,4 @@
 name: Force Reset While Preserving .github
-
 on:
   pull_request:  # You can trigger this manually
 
