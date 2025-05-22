@@ -1,0 +1,12 @@
+name: PR email addresses checker
+
+on:
+  pull_request:
+    branches: [ qcom-next-staging ]
+
+jobs:
+  pr-check-emails:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR emails
+        uses: qualcomm/commit-emails-check-action@main
