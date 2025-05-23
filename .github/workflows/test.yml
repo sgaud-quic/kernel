@@ -1,0 +1,13 @@
+
+name: Hello World
+
+on: [push]
+
+jobs:
+  hello-world-job:
+    runs-on: self-hosted
+    steps:
+      - name: Print Hello, World!
+        run: | 
+          echo "Hello, World!"
+          git clone https://github.com/qualcomm-linux/kernel.git
