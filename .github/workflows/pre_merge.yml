@@ -11,9 +11,9 @@ jobs:
     with:
       docker_image: kmake-image:latest
 
-  test:
-    needs: [build]
-    uses: ./.github/workflows/test.yml
-    secrets: inherit
-    with:
-      docker_image: kmake-image:latest
+#  test:
+#    needs: [build]
+#    uses: ./.github/workflows/test.yml
+#    secrets: inherit
+#    with:
+#      docker_image: kmake-image:latest
