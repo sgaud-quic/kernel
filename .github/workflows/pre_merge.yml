@@ -12,9 +12,10 @@ jobs:
       - name: Get PR description
         id: get_pr
         run: |
-          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} --json body -q ".body")
-          echo "PR_BODY=$PR_BODY" >> $GITHUB_ENV
-
+          echo "PR_BODY<<EOF" >> $GITHUB_ENV
+          gh pr view ${{ github.event.pull_request.number }} --json body -q ".body" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
       - name: Check for dependency
         run: |
           echo "$PR_BODY" | grep -i "depends on"
