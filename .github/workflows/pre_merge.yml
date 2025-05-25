@@ -18,9 +18,7 @@ jobs:
           
       - name: Check for dependency
         run: |
-          echo "$PR_BODY" | grep -i "depends on"
-
-
+          echo "$PR_BODY" | grep -i "depends on" | grep -o '[0-9]\+'
 #jobs:
 #  build:
 #    uses: ./.github/workflows/build.yml
