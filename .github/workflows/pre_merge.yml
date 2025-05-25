@@ -4,16 +4,33 @@ on:
     branches:
       - qcom-next-staging
 
-jobs:
-  build:
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
-    with:
-      docker_image: kmake-image:latest
 
-  test:
-    needs: [build]
-    uses: ./.github/workflows/test.yml
-    secrets: inherit
-    with:
-      docker_image: kmake-image:latest
+jobs:
+  check-dependencies:
+    runs-on: self-hosted
+    steps:
+      - name: Get PR description
+        id: get_pr
+        run: |
+          echo "PR_BODY<<EOF" >> $GITHUB_ENV
+          gh pr view ${{ github.event.pull_request.number }} --json body -q ".body" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Check for dependency
+        run: |
+          echo "$PR_BODY" | grep -i "depends on" | grep -o '[0-9]\+'
+
+
+#jobs:
+#  build:
+#    uses: ./.github/workflows/build.yml
+#    secrets: inherit
+#    with:
+#      docker_image: kmake-image:latest
+
+#  test:
+#    needs: [build]
+#    uses: ./.github/workflows/test.yml
+#    secrets: inherit
+#    with:
+#      docker_image: kmake-image:latest
