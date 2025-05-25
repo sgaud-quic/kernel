@@ -10,8 +10,7 @@ on:
 jobs:
   build:
     runs-on:
-      group: GHA-Kernel-SelfHosted-RG
-      labels: [ self-hosted, kernel-prd-u2404-x64-large-od-ephem ]
+      labels: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
