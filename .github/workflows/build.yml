@@ -9,9 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on:
-      group: GHA-Kernel-SelfHosted-RG
-      labels: [ self-hosted, kernel-prd-u2404-x64-large-od-ephem ]
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,19 +33,23 @@ jobs:
         run: |
           touch ../artifacts/file_list.txt
           tar -cJf modules.tar.xz ../kobj/tar-install/lib/modules/
+          cp modules.tar.xz /var/www/html
           echo "modules.tar.xz" >> ../artifacts/file_list.txt
           echo "../kobj/arch/arm64/boot/Image" >> ../artifacts/file_list.txt
+          cp ../kobj/arch/arm64/boot/Image /var/www/html
           echo "../kobj/vmlinux" >> ../artifacts/file_list.txt
+          cp ../kobj/vmlinux /var/www/html
           echo "../kobj/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dtb" >> ../artifacts/file_list.txt
+          cp ../kobj/arch/arm64/boot/dts/qcom/qcs6490-rb3gen2.dtb /var/www/html
 
-      - name: Upload artifacts
-        uses: ./.github/actions/aws_s3_helper
-        with:
-          s3_bucket: qli-prd-kernel-gh-artifacts
-          aws_access_key_id: ${{ secrets.AWSKEYID }}
-          aws_secret_access_key: ${{ secrets.AWSACCESSKEY }}
-          local_file: ../artifacts/file_list.txt
-          mode: multi-upload
+#      - name: Upload artifacts
+#        uses: ./.github/actions/aws_s3_helper
+#        with:
+#          s3_bucket: qli-prd-kernel-gh-artifacts
+#          aws_access_key_id: ${{ secrets.AWSKEYID }}
+#          aws_secret_access_key: ${{ secrets.AWSACCESSKEY }}
+#          local_file: ../artifacts/file_list.txt
+#          mode: multi-upload
 
       - name: Clean up
         run: |

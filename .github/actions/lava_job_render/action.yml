@@ -62,23 +62,28 @@ runs:
           -e dtb_url="${{ steps.process_urls.outputs.dtb_url }}" \
           ${{ inputs.docker_image }} \
           jq '.artifacts["dtbs/qcom/qcs6490-rb3gen2.dtb"] = env.dtb_url' data/metadata.json > temp.json && mv temp.json data/metadata.json
+          cp data/metadata.json /var/www/html
 
-    - name: Upload metadata.json
-      id: upload_metadata
-      uses: ./.github/actions/aws_s3_helper
-      with:
-        local_file: ../job_render/data/metadata.json
-        s3_bucket: qli-prd-kernel-gh-artifacts
-        mode: single-upload
+#    - name: Upload metadata.json
+#      id: upload_metadata
+#      uses: ./.github/actions/aws_s3_helper
+#      with:
+#        local_file: ../job_render/data/metadata.json
+#        s3_bucket: qli-prd-kernel-gh-artifacts
+#        mode: single-upload
 
     - name: Create template json
       shell: bash
       run: |
         echo "Creating job definition"
-        metadata_url="${{ steps.upload_metadata.outputs.presigned_url }}"
-        vmlinux_url="${{ steps.process_urls.outputs.vmlinux_url }}"
-        image_url="${{ steps.process_urls.outputs.image_url }}"
-        modules_url="${{ steps.process_urls.outputs.modules_url }}"
+#        metadata_url="${{ steps.upload_metadata.outputs.presigned_url }}"
+        metadata_url="http://hu-sgaud-hyd/metadata.json"
+#        vmlinux_url="${{ steps.process_urls.outputs.vmlinux_url }}"
+        vmlinux_url="http://hu-sgaud-hyd/vmlinux"
+#        image_url="${{ steps.process_urls.outputs.image_url }}"
+        image_url="http://hu-sgaud-hyd/Image"
+#        modules_url="${{ steps.process_urls.outputs.modules_url }}"
+        modules_url="http://hu-sgaud-hyd/modules.tar.xz"
         # Create the job definition using the processed URLs
         cd ../job_render
         # using metadata_url
@@ -118,8 +123,10 @@ runs:
       shell: bash
       run: |
         cd ../job_render
-        ramdisk_url="$(aws s3 presign s3://qli-prd-kernel-gh-artifacts/meta-qcom/initramfs-kerneltest-full-image-qcom-armv8a.cpio.gz --expires 7600)"
-        firmware_url="$(aws s3 presign s3://qli-prd-kernel-gh-artifacts/meta-qcom/initramfs-firmware-rb3gen2-image-qcom-armv8a.cpio.gz --expires 7600)"
+#        ramdisk_url="$(aws s3 presign s3://qli-prd-kernel-gh-artifacts/meta-qcom/initramfs-kerneltest-full-image-qcom-armv8a.cpio.gz --expires 7600)"
+        ramdisk_url="http://hu-sgaud-hyd/initramfs-kerneltest-full-image-qcom-armv8a.cpio.gz"
+#        firmware_url="$(aws s3 presign s3://qli-prd-kernel-gh-artifacts/meta-qcom/initramfs-firmware-rb3gen2-image-qcom-armv8a.cpio.gz --expires 7600)"
+        firmware_url="http://hu-sgaud-hyd/initramfs-firmware-qcs8300-ride-image-qcom-armv8a.cpio.gz"
         # using ramdisk_url
         docker run -i --rm \
           --user "$(id -u):$(id -g)" \

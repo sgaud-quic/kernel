@@ -6,9 +6,7 @@ on:
 
 jobs:
   prepare:
-    runs-on:
-      group: GHA-Kernel-SelfHosted-RG
-      labels: [self-hosted, kernel-prd-u2404-x64-large-od-ephem]
+    runs-on: self-hosted
     steps:
       - name: Checkout PR Code
         uses: actions/checkout@v4
