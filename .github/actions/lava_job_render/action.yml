@@ -61,7 +61,7 @@ runs:
           -v "$(dirname "$PWD")":"$(dirname "$PWD")" \
           -e dtb_url="${{ steps.process_urls.outputs.dtb_url }}" \
           ${{ inputs.docker_image }} \
-          jq '.artifacts["dtbs/qcom/qcs6490-rb3gen2.dtb"] = env.dtb_url' data/metadata.json > temp.json && mv temp.json data/metadata.json
+          jq '.artifacts["dtbs/qcom/qcs6490-rb3gen2.dtb"] = env.dtb_url' data/metadata.json > temp.json && mv temp.json data/metadata.json \
           cp data/metadata.json /var/www/html
 
 #    - name: Upload metadata.json
