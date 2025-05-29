@@ -37,7 +37,8 @@ jobs:
         run: |
           cd ${{ steps.sync.outputs.workspace_path }}
           touch ../artifacts/file_list.txt
-          tar -cJf modules.tar.xz ../kobj/tar-install/lib/modules/
+          cd ../kobj/tar-install
+          tar -cJf modules.tar.xz lib/modules/
           echo "modules.tar.xz" >> ../artifacts/file_list.txt
           echo "../kobj/arch/arm64/boot/Image" >> ../artifacts/file_list.txt
           echo "../kobj/vmlinux" >> ../artifacts/file_list.txt
