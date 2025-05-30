@@ -3,15 +3,6 @@ on:
   pull_request_target:
 
 jobs:
-  build:
-    uses: ./.github/workflows/build.yml
+  pre-merge:
+    uses: qualcomm-linux/kernel-config/.github/workflows/pre_merge.yml@main
     secrets: inherit
-    with:
-      docker_image: kmake-image:latest
-
-  test:
-    needs: [build]
-    uses: ./.github/workflows/test.yml
-    secrets: inherit
-    with:
-      docker_image: kmake-image:latest
