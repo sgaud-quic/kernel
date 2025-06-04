@@ -1,8 +1,6 @@
 name: Kernel Checkers
 on:
   pull_request:
-    branches:
-      - qcom-next-staging
 
 jobs:
   prepare:
