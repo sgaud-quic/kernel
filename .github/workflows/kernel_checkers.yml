@@ -5,12 +5,12 @@ on:
 jobs:
   prepare:
     runs-on: self-hosted
+    
     steps:
       - name: Checkout PR Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
     outputs:
       kernel_src: ${{ github.workspace }}
       base_sha: ${{ github.event.pull_request.base.sha }}
@@ -18,12 +18,14 @@ jobs:
 
   checker:
     needs: prepare
-    uses: sgaud-quic/kernel-checkers/.github/workflows/checker.yml@main
+    uses: qualcomm-linux/kernel-checkers/.github/workflows/checker.yml@main
     with:
       check_name: ${{ matrix.check }}
-      kernel_src: ${{ needs.prepare.outputs.kernel_src }}
+      kernel_src: ${{ needs.prepare.outputs.kernel_src }}/kernel
       base_sha: ${{ needs.prepare.outputs.base_sha }}
       head_sha: ${{ needs.prepare.outputs.head_sha }}
+      base_branch: ${{ github.base_ref }}
+      pr_number: ${{ github.event.pull_request.number }}
 
     strategy:
       matrix:
