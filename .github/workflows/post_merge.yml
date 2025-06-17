@@ -21,6 +21,7 @@ jobs:
       - name: Create Tag
         run: |
           set -x
+          BRANCH_NAME="qcom-next-test"
           CURRVER=$(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^EXTRAVERSION =/ {e=$3} END {print v "." p e}' Makefile)
           TAG_NAME="${BRANCH_NAME}-${CURRVER}-$(date +%Y%m%d)"
           git push origin qcom-next-staging-test:qcom-next-test -f
