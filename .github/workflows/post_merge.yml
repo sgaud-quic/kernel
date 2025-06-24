@@ -13,20 +13,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Git
-        run: |
-          git config user.name "Salendarsingh Gaud"
-          git config user.email "sgaud@qti.qualcomm.com"
-
       - name: Create Tag
         run: |
           set -x
           BRANCH_NAME="qcom-next-test"
           CURRVER=$(awk '/^VERSION =/ {v=$3} /^PATCHLEVEL =/ {p=$3} /^EXTRAVERSION =/ {e=$3} END {print v "." p e}' Makefile)
           TAG_NAME="${BRANCH_NAME}-${CURRVER}-$(date +%Y%m%d)"
+          TAGS=$(git tag -l "${TAG_NAME}*")
           git push origin qcom-next-staging-test:qcom-next-test -f
+          if ! echo "$TAGS" | grep -q "^${TAG_NAME}$"; then
+            git tag "$TAG_NAME"
+            echo "Created tag: $TAG_NAME"
+            git push origin $TAG_NAME
+          else
+            i=1
+            while echo "$TAGS" | grep -q "^${TAG_NAME}\.${i}$"; do
+              ((i++))
+            done
+            NEW_TAG="${BASE_TAG}.${i}"
+            git tag "$NEW_TAG"
+            echo "Created tag: $NEW_TAG"
+            git push origin $NEW_TAG
+          fi
           #TAG_NAME="v$(date +'%Y.%m.%d.%H%M%S')"
-          git checkout qcom-next-test
-          git pull
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
