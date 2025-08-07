@@ -4,5 +4,5 @@ on:
 
 jobs:
   pre-merge:
-    uses: sgaud-quic/kernel-config/.github/workflows/pre_merge.yml@flatbuild_working
+    uses: sgaud-quic/kernel-config/.github/workflows/ubuntu-package-generation.yml@flatbuild_working
     secrets: inherit
