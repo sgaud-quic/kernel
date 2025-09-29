@@ -41,6 +41,7 @@ properties:
       - items:
           - enum:
               - qcom,sm8750-dp
+              - qcom,qcs8300-dp
           - const: qcom,sm8650-dp
 
   reg:
