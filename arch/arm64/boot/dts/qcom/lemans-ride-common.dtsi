@@ -436,6 +436,14 @@
 	};
 };
 
+&gpu {
+	status = "okay";
+};
+
+&gpu_zap_shader {
+	firmware-name = "qcom/sa8775p/a663_zap.mbn";
+};
+
 &i2c11 {
 	clock-frequency = <400000>;
 	status = "okay";
@@ -720,6 +728,13 @@
 			  "GNSS_RST",
 			  "GNSS_EN",
 			  "GNSS_BOOT_MODE";
+};
+
+&psci {
+	reboot-mode {
+		mode-bootloader = <0x10001 0x2>;
+		mode-edl = <0 0x1>;
+	};
 };
 
 &qupv3_id_1 {
