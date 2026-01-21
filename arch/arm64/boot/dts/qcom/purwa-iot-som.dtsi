@@ -3,10 +3,13 @@
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
-#include "hamoa.dtsi"
+#include "purwa.dtsi"
 #include "hamoa-pmics.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+
+/delete-node/ &pmc8380_6;
+/delete-node/ &pmc8380_6_thermal;
 
 / {
 	reserved-memory {
@@ -378,16 +381,12 @@
 	};
 };
 
-&iris {
-	status = "okay";
-};
-
 &gpu {
 	status = "okay";
 };
 
 &gpu_zap_shader {
-	firmware-name = "qcom/x1e80100/gen70500_zap.mbn";
+	firmware-name = "qcom/x1p42100/gen71500_zap.mbn";
 };
 
 &pcie3 {
@@ -484,7 +483,8 @@
 };
 
 &tlmm {
-	gpio-reserved-ranges = <34 2>; /* TPM LP & INT */
+	gpio-reserved-ranges = <34 2>, /* TPM LP & INT */
+			       <44 4>; /* SPI (TPM) */
 
 	pcie3_default: pcie3-default-state {
 		clkreq-n-pins {
