@@ -204,6 +204,23 @@ static const struct typec_operations hd3ss3220_ops = {
 	.port_type_set = hd3ss3220_port_type_set,
 };
 
+static void hd3ss3220_regulator_control(struct hd3ss3220 *hd3ss3220, bool on)
+{
+	int ret;
+
+	if (regulator_is_enabled(hd3ss3220->vbus) == on)
+		return;
+
+	if (on)
+		ret = regulator_enable(hd3ss3220->vbus);
+	else
+		ret = regulator_disable(hd3ss3220->vbus);
+
+	if (ret)
+		dev_err(hd3ss3220->dev,
+			"vbus regulator %s failed: %d\n", on ? "disable" : "enable", ret);
+}
+
 static void hd3ss3220_set_role(struct hd3ss3220 *hd3ss3220)
 {
 	enum usb_role role_state = hd3ss3220_get_attached_state(hd3ss3220);
@@ -220,6 +237,9 @@ static void hd3ss3220_set_role(struct hd3ss3220 *hd3ss3220)
 	default:
 		break;
 	}
+
+	if (hd3ss3220->vbus && !hd3ss3220->id_gpiod)
+		hd3ss3220_regulator_control(hd3ss3220, role_state == USB_ROLE_HOST);
 
 	hd3ss3220->role_state = role_state;
 }
@@ -330,18 +350,10 @@ static const struct regmap_config config = {
 static irqreturn_t hd3ss3220_id_isr(int irq, void *dev_id)
 {
 	struct hd3ss3220 *hd3ss3220 = dev_id;
-	int ret;
 	int id;
 
 	id = gpiod_get_value_cansleep(hd3ss3220->id_gpiod);
-	if (!id)
-		ret = regulator_enable(hd3ss3220->vbus);
-	else
-		ret = regulator_disable(hd3ss3220->vbus);
-
-	if (ret)
-		dev_err(hd3ss3220->dev,
-			"vbus regulator %s failed: %d\n", id ? "disable" : "enable", ret);
+	hd3ss3220_regulator_control(hd3ss3220, !id);
 
 	return IRQ_HANDLED;
 }
@@ -489,6 +501,11 @@ static int hd3ss3220_probe(struct i2c_client *client)
 	if (hd3ss3220->poll)
 		schedule_delayed_work(&hd3ss3220->output_poll_work, HZ);
 
+	if (client->irq && device_property_read_bool(hd3ss3220->dev, "wakeup-source")) {
+		device_init_wakeup(&client->dev, true);
+		enable_irq_wake(client->irq);
+	}
+
 	dev_info(&client->dev, "probed revision=0x%x\n", ret);
 
 	return 0;
@@ -513,6 +530,35 @@ static void hd3ss3220_remove(struct i2c_client *client)
 	usb_role_switch_put(hd3ss3220->role_sw);
 }
 
+static int __maybe_unused hd3ss3220_suspend(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+
+	if (device_may_wakeup(dev))
+		enable_irq_wake(client->irq);
+	else
+		disable_irq(client->irq);
+
+	return 0;
+}
+
+static int __maybe_unused hd3ss3220_resume(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+
+	if (device_may_wakeup(dev))
+		disable_irq_wake(client->irq);
+	else
+		enable_irq(client->irq);
+
+	return 0;
+}
+
+static const struct dev_pm_ops hd3ss3220_pm_ops = {
+	.suspend = hd3ss3220_suspend,
+	.resume = hd3ss3220_resume,
+};
+
 static const struct of_device_id dev_ids[] = {
 	{ .compatible = "ti,hd3ss3220"},
 	{}
@@ -523,6 +569,7 @@ static struct i2c_driver hd3ss3220_driver = {
 	.driver = {
 		.name = "hd3ss3220",
 		.of_match_table = dev_ids,
+		.pm	= &hd3ss3220_pm_ops,
 	},
 	.probe = hd3ss3220_probe,
 	.remove = hd3ss3220_remove,
