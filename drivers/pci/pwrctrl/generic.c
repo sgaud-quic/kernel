@@ -76,7 +76,7 @@ static int pci_pwrctrl_slot_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	slot->clk = devm_clk_get_optional_enabled(dev, NULL);
+	slot->clk = devm_clk_get_optional(dev, NULL);
 	if (IS_ERR(slot->clk))
 		return dev_err_probe(dev, PTR_ERR(slot->clk),
 				     "Failed to enable slot clock\n");
