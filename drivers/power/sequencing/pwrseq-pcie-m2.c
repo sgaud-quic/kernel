@@ -387,7 +387,7 @@ static int pwrseq_pcie_m2_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	platform_set_drvdata(pdev, ctx);
-	ctx->of_node = of_node_get(dev->of_node);
+	ctx->of_node = dev_of_node(dev);
 	ctx->pdata = device_get_match_data(dev);
 	if (!ctx->pdata)
 		return dev_err_probe(dev, -ENODEV,
