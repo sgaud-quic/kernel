@@ -66,10 +66,8 @@ static int pci_pwrctrl_slot_probe(struct platform_device *pdev)
 
 	ret = of_regulator_bulk_get_all(dev, dev_of_node(dev),
 					&slot->supplies);
-	if (ret < 0) {
-		dev_err_probe(dev, ret, "Failed to get slot regulators\n");
-		return ret;
-	}
+	if (ret < 0)
+		return dev_err_probe(dev, ret, "Failed to get slot regulators\n");
 
 	slot->num_supplies = ret;
 
@@ -78,7 +76,7 @@ static int pci_pwrctrl_slot_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	slot->clk = devm_clk_get_optional(dev, NULL);
+	slot->clk = devm_clk_get_optional_enabled(dev, NULL);
 	if (IS_ERR(slot->clk))
 		return dev_err_probe(dev, PTR_ERR(slot->clk),
 				     "Failed to enable slot clock\n");
@@ -98,6 +96,10 @@ static int pci_pwrctrl_slot_probe(struct platform_device *pdev)
 static const struct of_device_id pci_pwrctrl_slot_of_match[] = {
 	{
 		.compatible = "pciclass,0604",
+	},
+	/* Renesas UPD720201/UPD720202 USB 3.0 xHCI Host Controller */
+	{
+		.compatible = "pci1912,0014",
 	},
 	{ }
 };
