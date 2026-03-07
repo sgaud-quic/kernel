@@ -9,9 +9,9 @@
 #include <dt-bindings/gpio/gpio.h>
 
 &{/} {
-	model = "Qualcomm Technologies, Inc. Monaco-EVK Mezzanine";
+	model = "Qualcomm Technologies, Inc. Monaco-EVK IFP Mezzanine";
 
-	vreg_0p9: regulator-vreg-0p9 {
+	vreg_0p9: regulator-0v9 {
 		compatible = "regulator-fixed";
 		regulator-name = "VREG_0P9";
 
@@ -19,52 +19,14 @@
 		regulator-max-microvolt = <900000>;
 		regulator-always-on;
 		regulator-boot-on;
-
-		vin-supply = <&vreg_3p3>;
 	};
 
-	vreg_1p8: regulator-vreg-1p8 {
+	vreg_1p8: regulator-1v8 {
 		compatible = "regulator-fixed";
 		regulator-name = "VREG_1P8";
 
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
-		regulator-always-on;
-		regulator-boot-on;
-
-		vin-supply = <&vreg_4p2>;
-	};
-
-	vreg_3p3: regulator-vreg-3p3 {
-		compatible = "regulator-fixed";
-		regulator-name = "VREG_3P3";
-
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-always-on;
-		regulator-boot-on;
-
-		vin-supply = <&vreg_4p2>;
-	};
-
-	vreg_4p2: regulator-vreg-4p2 {
-		compatible = "regulator-fixed";
-		regulator-name = "VREG_4P2";
-
-		regulator-min-microvolt = <4200000>;
-		regulator-max-microvolt = <4200000>;
-		regulator-always-on;
-		regulator-boot-on;
-
-		vin-supply = <&vreg_sys_pwr>;
-	};
-
-	vreg_sys_pwr: regulator-vreg-sys-pwr {
-		compatible = "regulator-fixed";
-		regulator-name = "VREG_SYS_PWR";
-
-		regulator-min-microvolt = <24000000>;
-		regulator-max-microvolt = <24000000>;
 		regulator-always-on;
 		regulator-boot-on;
 	};
@@ -73,8 +35,6 @@
 &i2c15 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-
-	status = "okay";
 
 	eeprom1: eeprom@52 {
 		compatible = "giantec,gt24c256c", "atmel,24c256";
@@ -180,10 +140,10 @@
 	tc9563_resx_n: tc9563-resx-state {
 		pins = "gpio124";
 		function = "gpio";
-
 		bias-disable;
-		input-disable;
-		output-enable;
-		power-source = <0>;
+		/* Reset pin of tc9563 is active low hence set default
+		 * state of this pin to output-high.
+		 */
+		output-high;
 	};
 };
