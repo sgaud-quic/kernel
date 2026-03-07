@@ -9,65 +9,9 @@
 #include <dt-bindings/gpio/gpio.h>
 
 &{/} {
-	model = "Qualcomm Technologies, Inc. Lemans-evk Mezzanine";
+	model = "Qualcomm Technologies, Inc. Lemans-evk IFP Mezzanine";
 
-	panel_lvds: panel-lvds@0 {
-		compatible = "panel-lvds";
-
-		data-mapping = "vesa-24";
-
-		width-mm = <476>;
-		height-mm = <268>;
-
-		status = "okay";
-
-		panel-timing {
-			clock-frequency = <148500000>;
-			hactive = <1920>;
-			vactive = <1080>;
-			hfront-porch = <88>;
-			hback-porch = <148>;
-			hsync-len = <44>;
-			vfront-porch = <4>;
-			vback-porch = <36>;
-			vsync-len = <5>;
-			de-active = <1>;
-		};
-
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-
-				dual-lvds-odd-pixels;
-				panel_in_lvds_odd: endpoint {
-					remote-endpoint = <&lt9211c_out_odd>;
-				};
-			};
-
-			port@1 {
-				reg = <1>;
-
-				dual-lvds-even-pixels;
-				panel_in_lvds_even: endpoint {
-					remote-endpoint = <&lt9211c_out_even>;
-				};
-			};
-		};
-	};
-
-	lcd_disp_bias: regulator-lcd-disp-bias {
-		compatible = "regulator-fixed";
-		regulator-name = "lcd_disp_bias";
-		regulator-min-microvolt = <5500000>;
-		regulator-max-microvolt = <5500000>;
-		gpio = <&expander3 1 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
-	vreg_0p9: regulator-vreg-0p9 {
+	vreg_0p9: regulator-0v9 {
 		compatible = "regulator-fixed";
 		regulator-name = "VREG_0P9";
 
@@ -75,52 +19,14 @@
 		regulator-max-microvolt = <900000>;
 		regulator-always-on;
 		regulator-boot-on;
-
-		vin-supply = <&vreg_3p3>;
 	};
 
-	vreg_1p8: regulator-vreg-1p8 {
+	vreg_1p8: regulator-1v8 {
 		compatible = "regulator-fixed";
 		regulator-name = "VREG_1P8";
 
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <1800000>;
-		regulator-always-on;
-		regulator-boot-on;
-
-		vin-supply = <&vreg_4p2>;
-	};
-
-	vreg_3p3: regulator-vreg-3p3 {
-		compatible = "regulator-fixed";
-		regulator-name = "VREG_3P3";
-
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-always-on;
-		regulator-boot-on;
-
-		vin-supply = <&vreg_4p2>;
-	};
-
-	vreg_4p2: regulator-vreg-4p2 {
-		compatible = "regulator-fixed";
-		regulator-name = "VREG_4P2";
-
-		regulator-min-microvolt = <4200000>;
-		regulator-max-microvolt = <4200000>;
-		regulator-always-on;
-		regulator-boot-on;
-
-		vin-supply = <&vreg_sys_pwr>;
-	};
-
-	vreg_sys_pwr: regulator-vreg-sys-pwr {
-		compatible = "regulator-fixed";
-		regulator-name = "VREG_SYS_PWR";
-
-		regulator-min-microvolt = <24000000>;
-		regulator-max-microvolt = <24000000>;
 		regulator-always-on;
 		regulator-boot-on;
 	};
@@ -214,55 +120,6 @@
 	};
 };
 
-&i2c1 {
-	qcom,load-firmware;
-	qcom,xfer-mode = <1>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&qup_i2c1_default>;
-
-	status = "okay";
-
-	lt9211c_codec: lvds-bridge@2d {
-		compatible = "lontium,lt9211c";
-		reg = <0x2d>;
-		reset-gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
-		vcc-supply = <&vreg_s4a>;
-
-		status = "okay";
-
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			port@0 {
-				reg = <0>;
-
-				lt9211c_in: endpoint {
-					data-lanes = <0 1 2 3>;
-					remote-endpoint = <&mdss0_dsi0_out>;
-				};
-			};
-
-			port@2 {
-				reg = <2>;
-
-				lt9211c_out_odd: endpoint {
-					remote-endpoint = <&panel_in_lvds_odd>;
-				};
-			};
-
-			port@3 {
-				reg = <3>;
-
-				lt9211c_out_even: endpoint {
-					remote-endpoint = <&panel_in_lvds_even>;
-				};
-			};
-		};
-	};
-
-};
-
 &i2c18 {
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -282,26 +139,6 @@
 			};
 		};
 	};
-};
-
-&mdss0 {
-	status = "okay";
-};
-
-&mdss0_dsi0 {
-	vdda-supply = <&vreg_l1c>;
-	power-supply = <&lcd_disp_bias>;
-	status = "okay";
-};
-
-&mdss0_dsi0_out {
-	data-lanes = <0 1 2 3>;
-	remote-endpoint = <&lt9211c_in>;
-};
-
-&mdss0_dsi0_phy {
-	vdds-supply = <&vreg_l4a>;
-	status = "okay";
 };
 
 &pcie0 {
@@ -417,10 +254,10 @@
 	tc9563_resx_n: tc9563-resx-state {
 		pins = "gpio140";
 		function = "gpio";
-
 		bias-disable;
-		input-disable;
-		output-enable;
-		power-source = <0>;
+		/* Reset pin of tc9563 is active low hence set default
+		 * state of this pin to output-high.
+		 */
+		output-high;
 	};
 };
