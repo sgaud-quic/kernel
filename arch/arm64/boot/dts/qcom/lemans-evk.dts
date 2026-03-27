@@ -23,6 +23,7 @@
 		serial0 = &uart10;
 		serial2 = &uart0;
 		serial1 = &uart17;
+		serial2 = &uart0;
 	};
 
 	dmic: audio-codec-0 {
@@ -976,6 +977,10 @@
 		function = "gpio";
 		bias-pull-up;
 	};
+};
+
+&uart0 {
+	status = "okay";
 };
 
 &uart0 {
