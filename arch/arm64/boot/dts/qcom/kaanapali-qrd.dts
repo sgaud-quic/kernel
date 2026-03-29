@@ -80,6 +80,11 @@
 			wakeup-source;
 		};
 	};
+
+	pmih0108_e1_eusb2_repeater {
+		vdd18-supply = <&vreg_l15b_1p8>;
+		vdd3-supply = <&vreg_l5b_3p1>;
+	};
 };
 
 &apps_rsc {
