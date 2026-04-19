@@ -364,7 +364,7 @@ static const struct dump_table lemans_dump_table = {
 
 static const struct dump_table talos_dump_table = {
 	.items		= talos_items,
-	.num_of_items	= ARRAY_SIZE(lemans_items),
+	.num_of_items	= ARRAY_SIZE(talos_items),
 	.imem_base	= 0x146aa010,
 	.imem_size	= 0x8,
 };
@@ -506,7 +506,6 @@ static void __exit mem_dump_dev_exit(void)
 	platform_device_unregister(mem_dump_pdev);
 }
 
-module_init(mem_dump_dev_init);
-module_exit(mem_dump_dev_exit);
+late_initcall(mem_dump_dev_init);
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Qualcomm Technologies Inc. Memory Dump driver V2, device stub");
