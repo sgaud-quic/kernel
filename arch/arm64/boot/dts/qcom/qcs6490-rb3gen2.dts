@@ -44,12 +44,18 @@
 		stdout-path = "serial0:115200n8";
 	};
 
+	clocks {
+		mcp2518fd_osc: can-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <40000000>;
+			#clock-cells = <0>;
+		};
+	};
+
 	dp-connector {
 		compatible = "dp-connector";
 		label = "DP";
 		type = "mini";
-
-		hpd-gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
 
 		port {
 			dp_connector_in: endpoint {
@@ -790,7 +796,7 @@
 };
 
 &mdss_dp_out {
-	data-lanes = <0 1>;
+	data-lanes = <0 1 2 3>;
 	remote-endpoint = <&usb_dp_qmpphy_dp_in>;
 };
 
@@ -1089,6 +1095,13 @@
 	status = "okay";
 };
 
+&psci {
+	reboot-mode {
+		mode-bootloader = <0x10001 0x2>;
+		mode-edl = <0 0x1>;
+	};
+};
+
 &qup_uart7_cts {
 	/*
 	 * Configure a bias-bus-hold on CTS to lower power
@@ -1206,6 +1219,20 @@
 		platform {
 			sound-dai = <&q6apm>;
 		};
+	};
+};
+
+&spi3 {
+	status = "okay";
+
+	can@0 {
+		compatible = "microchip,mcp2518fd";
+		reg = <0>;
+		interrupts-extended = <&tlmm 7 IRQ_TYPE_LEVEL_LOW>;
+		clocks = <&mcp2518fd_osc>;
+		spi-max-frequency = <14000000>;
+		vdd-supply = <&vreg_l11c_2p8>;
+		microchip,xstbyen;
 	};
 };
 
@@ -1392,6 +1419,7 @@
 	vdda-phy-supply = <&vreg_l6b_1p2>;
 	vdda-pll-supply = <&vreg_l1b_0p912>;
 
+	mode-switch;
 	orientation-switch;
 
 	status = "okay";
@@ -1442,7 +1470,6 @@
 /* PINCTRL - ADDITIONS TO NODES IN PARENT DEVICE TREE FILES */
 
 &edp_hot_plug_det {
-	function = "gpio";
 	bias-disable;
 };
 
