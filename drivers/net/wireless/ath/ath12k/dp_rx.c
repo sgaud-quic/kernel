@@ -17,6 +17,11 @@
 #include "dp_mon.h"
 #include "debugfs_htt_stats.h"
 
+#define ATH12K_2GHZ_MIN_CHAN_NUM 1
+#define ATH12K_2GHZ_MAX_CHAN_NUM 14
+#define ATH12K_5GHZ_MIN_CHAN_NUM 36
+#define ATH12K_5GHZ_MAX_CHAN_NUM 177
+
 static int ath12k_dp_rx_tid_delete_handler(struct ath12k_base *ab,
 					   struct ath12k_dp_rx_tid_rxq *rx_tid);
 
@@ -564,6 +569,9 @@ static int ath12k_dp_prepare_reo_update_elem(struct ath12k_dp *dp,
 	struct dp_reo_update_rx_queue_elem *elem;
 
 	lockdep_assert_held(&dp->dp_lock);
+
+	if (!peer->primary_link)
+		return 0;
 
 	elem = kzalloc_obj(*elem, GFP_ATOMIC);
 	if (!elem)
@@ -1286,9 +1294,11 @@ void ath12k_dp_rx_h_ppdu(struct ath12k_pdev_dp *dp_pdev,
 	    center_freq <= ATH12K_MAX_6GHZ_FREQ) {
 		rx_status->band = NL80211_BAND_6GHZ;
 		rx_status->freq = center_freq;
-	} else if (channel_num >= 1 && channel_num <= 14) {
+	} else if (channel_num >= ATH12K_2GHZ_MIN_CHAN_NUM &&
+		   channel_num <= ATH12K_2GHZ_MAX_CHAN_NUM) {
 		rx_status->band = NL80211_BAND_2GHZ;
-	} else if (channel_num >= 36 && channel_num <= 173) {
+	} else if (channel_num >= ATH12K_5GHZ_MIN_CHAN_NUM &&
+		   channel_num <= ATH12K_5GHZ_MAX_CHAN_NUM) {
 		rx_status->band = NL80211_BAND_5GHZ;
 	}
 
@@ -1337,7 +1347,7 @@ void ath12k_dp_rx_deliver_msdu(struct ath12k_pdev_dp *dp_pdev, struct napi_struc
 	bool is_mcbc = rxcb->is_mcbc;
 	bool is_eapol = rxcb->is_eapol;
 
-	peer = ath12k_dp_peer_find_by_peerid(dp_pdev, rx_info->peer_id);
+	peer = ath12k_dp_peer_find_by_peerid(dp_pdev, rxcb->peer_id);
 
 	pubsta = peer ? peer->sta : NULL;
 
