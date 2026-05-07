@@ -18,6 +18,7 @@ void iris_core_deinit(struct iris_core *core)
 	if (core->state != IRIS_CORE_DEINIT) {
 		iris_fw_unload(core);
 		iris_vpu_power_off(core);
+		iris_fw_deinit(core);
 		iris_hfi_queues_deinit(core);
 		core->state = IRIS_CORE_DEINIT;
 	}
@@ -28,14 +29,13 @@ void iris_core_deinit(struct iris_core *core)
 
 static int iris_wait_for_system_response(struct iris_core *core)
 {
-	u32 hw_response_timeout_val = core->iris_platform_data->hw_response_timeout;
 	int ret;
 
 	if (core->state == IRIS_CORE_ERROR)
 		return -EIO;
 
 	ret = wait_for_completion_timeout(&core->core_init_done,
-					  msecs_to_jiffies(hw_response_timeout_val));
+					  msecs_to_jiffies(HW_RESPONSE_TIMEOUT_VALUE));
 	if (!ret) {
 		core->state = IRIS_CORE_ERROR;
 		return -ETIMEDOUT;
@@ -67,11 +67,19 @@ int iris_core_init(struct iris_core *core)
 	if (ret)
 		goto error_queue_deinit;
 
-	ret = iris_fw_load(core);
+	ret = iris_fw_init(core);
 	if (ret)
 		goto error_power_off;
 
+	ret = iris_fw_load(core);
+	if (ret)
+		goto error_firmware_deinit;
+
 	ret = iris_vpu_boot_firmware(core);
+	if (ret)
+		goto error_unload_fw;
+
+	ret = iris_vpu_switch_to_hwmode(core);
 	if (ret)
 		goto error_unload_fw;
 
@@ -85,6 +93,8 @@ int iris_core_init(struct iris_core *core)
 
 error_unload_fw:
 	iris_fw_unload(core);
+error_firmware_deinit:
+	iris_fw_deinit(core);
 error_power_off:
 	iris_vpu_power_off(core);
 error_queue_deinit:
