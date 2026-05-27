@@ -196,6 +196,7 @@ struct fastrpc_buf_overlap {
 	u64 mstart;
 	u64 mend;
 	u64 offset;
+	bool do_cmo;
 };
 
 struct fastrpc_buf {
@@ -271,6 +272,7 @@ struct fastrpc_session_ctx {
 	int sid;
 	bool used;
 	bool valid;
+	bool coherent;
 	bool allocated;
 	struct mutex mutex;
 };
@@ -353,6 +355,18 @@ static inline u64 fastrpc_sid_offset(struct fastrpc_channel_ctx *cctx,
 {
 	return (u64)sctx->sid << cctx->soc_data->sid_pos;
 }
+
+/*
+ * Align buffer size to kernel page granularity for dma-buf cache maintenance.
+ */
+static inline uint64_t buf_page_size(uint64_t size)
+{
+	int cache_align = dma_get_cache_alignment();
+	uint64_t sz = ALIGN(size, cache_align);
+
+	return max_t(uint64_t, sz, (uint64_t)cache_align);
+}
+
 
 static void fastrpc_free_map(struct kref *ref)
 {
@@ -634,7 +648,9 @@ static int olaps_cmp(const void *a, const void *b)
 static void fastrpc_get_buff_overlaps(struct fastrpc_invoke_ctx *ctx)
 {
 	u64 max_end = 0;
+	int max_raix = -1;
 	int i;
+	int inbufs = REMOTE_SCALARS_INBUFS(ctx->sc);
 
 	for (i = 0; i < ctx->nbufs; ++i) {
 		ctx->olaps[i].start = ctx->args[i].ptr;
@@ -654,6 +670,9 @@ static void fastrpc_get_buff_overlaps(struct fastrpc_invoke_ctx *ctx)
 			if (ctx->olaps[i].end > max_end) {
 				max_end = ctx->olaps[i].end;
 			} else {
+				if ((max_raix < inbufs && ctx->olaps[i].raix + 1 > inbufs) ||
+					(ctx->olaps[i].raix < inbufs && max_raix + 1 > inbufs))
+					ctx->olaps[i].do_cmo = true;
 				ctx->olaps[i].mend = 0;
 				ctx->olaps[i].mstart = 0;
 			}
@@ -663,6 +682,7 @@ static void fastrpc_get_buff_overlaps(struct fastrpc_invoke_ctx *ctx)
 			ctx->olaps[i].mstart = ctx->olaps[i].start;
 			ctx->olaps[i].offset = 0;
 			max_end = ctx->olaps[i].end;
+			max_raix = ctx->olaps[i].raix;
 		}
 	}
 }
@@ -1063,6 +1083,70 @@ static int fastrpc_create_maps(struct fastrpc_invoke_ctx *ctx)
 	return 0;
 }
 
+static int fastrpc_flush_args(struct fastrpc_invoke_ctx *ctx,
+	union fastrpc_remote_arg *rpra)
+{
+	int oix, inbufs, outbufs;
+	struct device *dev = ctx->fl->sctx->dev;
+
+	inbufs = REMOTE_SCALARS_INBUFS(ctx->sc);
+	outbufs = REMOTE_SCALARS_OUTBUFS(ctx->sc);
+	for (oix = 0; oix < inbufs+outbufs; ++oix) {
+		int i = ctx->olaps[oix].raix;
+		struct fastrpc_map *map = ctx->maps[i];
+
+		if (i+1 > inbufs)
+			continue;
+		if (!map)
+			continue;
+		if (rpra[i].buf.len && ctx->olaps[oix].mstart) {
+			if (map->buf) {
+				if ((buf_page_size(ctx->olaps[oix].mend -
+				ctx->olaps[oix].mstart)) == map->size ) {
+					dma_buf_begin_cpu_access(map->buf, DMA_TO_DEVICE);
+					dma_buf_end_cpu_access(map->buf, DMA_TO_DEVICE);
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+static int fastrpc_inv_args(struct fastrpc_invoke_ctx *ctx)
+{
+	int i, inbufs, outbufs;
+	uint32_t sc = ctx->sc;
+	union fastrpc_remote_arg *rpra = ctx->rpra;
+	struct device *dev = ctx->fl->sctx->dev;
+
+	inbufs = REMOTE_SCALARS_INBUFS(sc);
+	outbufs = REMOTE_SCALARS_OUTBUFS(sc);
+	for (i = 0; i < inbufs+outbufs; ++i) {
+		int over = ctx->olaps[i].raix;
+		struct fastrpc_map *map = ctx->maps[over];
+
+		if (over + 1 <= inbufs)
+			continue;
+		if (!rpra[over].buf.len)
+			continue;
+		if (!map)
+			continue;
+		if (((uintptr_t)rpra & PAGE_MASK) ==
+			((uintptr_t)rpra[over].buf.pv & PAGE_MASK))
+			continue;
+		if (ctx->olaps[i].mstart) {
+			if (map->buf) {
+				if (((buf_page_size(ctx->olaps[i].mend -
+					ctx->olaps[i].mstart)) == map->size)) {
+					dma_buf_begin_cpu_access(map->buf, DMA_FROM_DEVICE);
+					dma_buf_end_cpu_access(map->buf, DMA_TO_DEVICE);
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 static struct fastrpc_invoke_buf *fastrpc_invoke_buf_start(union fastrpc_remote_arg *pra, int len)
 {
 	return (struct fastrpc_invoke_buf *)(&pra[len]);
@@ -1187,6 +1271,12 @@ static int fastrpc_get_args(u32 kernel, struct fastrpc_invoke_ctx *ctx)
 		}
 	}
 
+	if (!ctx->fl->sctx->coherent) {
+		err =  fastrpc_flush_args(ctx, rpra);
+		if (err)
+			goto bail;
+	}
+
 	for (i = ctx->nbufs; i < ctx->nscalars; ++i) {
 		list[i].num = ctx->args[i].length ? 1 : 0;
 		list[i].pgidx = i;
@@ -1216,6 +1306,11 @@ static int fastrpc_put_args(struct fastrpc_invoke_ctx *ctx,
 	int ret = 0;
 
 	inbufs = REMOTE_SCALARS_INBUFS(ctx->sc);
+	outbufs = REMOTE_SCALARS_OUTBUFS(ctx->sc);
+	handles = REMOTE_SCALARS_INHANDLES(ctx->sc) + REMOTE_SCALARS_OUTHANDLES(ctx->sc);
+	list = fastrpc_invoke_buf_start(rpra, ctx->nscalars);
+	pages = fastrpc_phy_page_start(list, ctx->nscalars);
+	fdlist = (uint64_t *)(pages + inbufs + outbufs + handles);
 
 	for (i = inbufs; i < ctx->nbufs; ++i) {
 		if (!ctx->maps[i]) {
@@ -1375,6 +1470,11 @@ static int fastrpc_internal_invoke(struct fastrpc_user *fl,  u32 kernel,
 	if (err)
 		goto bail;
 
+	if (!fl->sctx->coherent) {
+		err = fastrpc_inv_args(ctx);
+		if (err)
+			goto bail;
+	}
 	/* make sure that all CPU memory writes are seen by DSP */
 	dma_wmb();
 	/* Send invoke buffer to remote dsp */
@@ -1404,6 +1504,11 @@ static int fastrpc_internal_invoke(struct fastrpc_user *fl,  u32 kernel,
 
 	/* make sure that all memory writes by DSP are seen by CPU */
 	dma_rmb();
+	if (!fl->sctx->coherent) {
+		err = fastrpc_inv_args(ctx);
+		if (err)
+			goto bail;
+	}
 	/* populate all the output buffers with results */
 	err = fastrpc_put_args(ctx, kernel);
 	if (err)
@@ -1463,6 +1568,7 @@ static int fastrpc_init_create_static_process(struct fastrpc_user *fl,
 	struct fastrpc_channel_ctx *cctx = fl->cctx;
 	char *name;
 	int err;
+	bool scm_done = false;
 	struct {
 		int client_id;
 		u32 namelen;
@@ -1490,6 +1596,32 @@ static int fastrpc_init_create_static_process(struct fastrpc_user *fl,
 		err = PTR_ERR(name);
 		goto err;
 	}
+
+	if (!fl->cctx->remote_heap) {
+		err = fastrpc_remote_heap_alloc(fl, fl->sctx->dev, init.memlen,
+						&fl->cctx->remote_heap);
+		if (err)
+			goto err_name;
+
+		/* Map if we have any heap VMIDs associated with this ADSP Static Process. */
+		if (fl->cctx->vmcount) {
+			u64 src_perms = BIT(QCOM_SCM_VMID_HLOS);
+
+			err = qcom_scm_assign_mem(fl->cctx->remote_heap->dma_addr,
+							(u64)fl->cctx->remote_heap->size,
+							&src_perms,
+							fl->cctx->vmperms, fl->cctx->vmcount);
+			if (err) {
+				dev_err(fl->sctx->dev,
+					"Failed to assign memory with dma_addr %pad size 0x%llx err %d\n",
+					&fl->cctx->remote_heap->dma_addr,
+					fl->cctx->remote_heap->size, err);
+				goto err_map;
+			}
+			scm_done = true;
+		}
+	}
+
 	inbuf.client_id = fl->client_id;
 	inbuf.namelen = init.namelen;
 	inbuf.pageslen = 0;
@@ -2389,6 +2521,7 @@ static int fastrpc_cb_probe(struct platform_device *pdev)
 	sess->used = false;
 	sess->valid = true;
 	sess->dev = dev;
+	sess->coherent = of_property_read_bool(dev->of_node, "dma-coherent");
 	mutex_init(&sess->mutex);
 	sess->allocated = true;
 	dev_set_drvdata(dev, sess);
