@@ -1234,9 +1234,7 @@ retry:
 	return 0;
 
 err_remove_bridge:
-	free_irq(client->irq, lt9611c);
 	cancel_work_sync(&lt9611c->work);
-	drm_bridge_remove(&lt9611c->bridge);
 
 err_disable_regulators:
 	regulator_bulk_disable(ARRAY_SIZE(lt9611c->supplies), lt9611c->supplies);
@@ -1252,7 +1250,6 @@ static void lt9611c_remove(struct i2c_client *client)
 {
 	struct lt9611c *lt9611c = i2c_get_clientdata(client);
 
-	free_irq(client->irq, lt9611c);
 	cancel_work_sync(&lt9611c->work);
 	regulator_bulk_disable(ARRAY_SIZE(lt9611c->supplies), lt9611c->supplies);
 	of_node_put(lt9611c->dsi1_node);
