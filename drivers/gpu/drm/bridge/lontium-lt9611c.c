@@ -711,10 +711,12 @@ lt9611c_bridge_detect(struct drm_bridge *bridge, struct drm_connector *connector
 	guard(mutex)(&lt9611c->ocm_lock);
 
 	ret = lt9611c_read_write_flow(lt9611c, cmd, ARRAY_SIZE(cmd), data, ARRAY_SIZE(data));
-	if (ret)
+	if (ret) {
 		dev_err(dev, "failed to read HPD status (err=%d)\n", ret);
-	else
+		connected = lt9611c->hdmi_connected;
+	} else {
 		connected = (data[4] == 0x02);
+	}
 
 	lt9611c->hdmi_connected = connected;
 
