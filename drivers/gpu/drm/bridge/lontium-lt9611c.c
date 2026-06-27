@@ -923,6 +923,23 @@ static void lt9611c_hdmi_audio_shutdown(struct drm_bridge *bridge,
 	drm_atomic_helper_connector_hdmi_clear_audio_infoframe(connector);
 }
 
+static void lt9611c_bridge_hpd_enable(struct drm_bridge *bridge)
+{
+	struct lt9611c *lt9611c = bridge_to_lt9611c(bridge);
+	u8 cmd[5] = {0x52, 0x48, 0x31, 0x3a, 0x00};
+	u8 data[5];
+	int ret;
+
+	mutex_lock(&lt9611c->ocm_lock);
+	ret = lt9611c_read_write_flow(lt9611c, cmd, ARRAY_SIZE(cmd),
+				      data, ARRAY_SIZE(data));
+	if (!ret)
+		lt9611c->hdmi_connected = (data[4] == 0x02);
+	mutex_unlock(&lt9611c->ocm_lock);
+
+	schedule_work(&lt9611c->work);
+}
+
 static int lt9611c_hdmi_audio_startup(struct drm_bridge *bridge,
 				      struct drm_connector *connector)
 {
@@ -939,6 +956,7 @@ static const struct drm_bridge_funcs lt9611c_bridge_funcs = {
 	.atomic_duplicate_state = drm_atomic_helper_bridge_duplicate_state,
 	.atomic_destroy_state = drm_atomic_helper_bridge_destroy_state,
 	.atomic_reset = drm_atomic_helper_bridge_reset,
+	.hpd_enable = lt9611c_bridge_hpd_enable,
 
 	.hdmi_tmds_char_rate_valid = lt9611c_hdmi_tmds_char_rate_valid,
 	.hdmi_write_avi_infoframe = lt9611c_hdmi_write_avi_infoframe,
