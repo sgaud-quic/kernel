@@ -974,6 +974,8 @@ static const struct drm_bridge_funcs lt9611c_bridge_funcs = {
 static int lt9611c_parse_dt(struct device *dev,
 			    struct lt9611c *lt9611c)
 {
+	int ret;
+
 	lt9611c->dsi0_node = of_graph_get_remote_node(dev->of_node, 0, -1);
 	if (!lt9611c->dsi0_node)
 		return dev_err_probe(dev, -ENODEV, "failed to get remote node for primary dsi\n");
@@ -984,7 +986,14 @@ static int lt9611c_parse_dt(struct device *dev,
 				 &lt9611c->selected_port))
 		lt9611c->selected_port = 0;
 
-	return drm_of_find_panel_or_bridge(dev->of_node, 2, -1, NULL, &lt9611c->bridge.next_bridge);
+	ret = drm_of_find_panel_or_bridge(dev->of_node, 2, -1, NULL, &lt9611c->bridge.next_bridge);
+	if (ret) {
+		of_node_put(lt9611c->dsi1_node);
+		of_node_put(lt9611c->dsi0_node);
+		return ret;
+	}
+	drm_bridge_get(lt9611c->bridge.next_bridge);
+	return 0;
 }
 
 static int lt9611c_gpio_init(struct lt9611c *lt9611c)
