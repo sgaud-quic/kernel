@@ -582,8 +582,6 @@
 };
 
 &iris {
-	firmware-name = "qcom/vpu/vpu30_p4_s6.mbn";
-
 	status = "okay";
 };
 
@@ -857,11 +855,15 @@
 
 &serdes0 {
 	phy-supply = <&vreg_l5a>;
+	vdda-0p9-supply = <&vreg_l4a>;
+
 	status = "okay";
 };
 
 &serdes1 {
 	phy-supply = <&vreg_l5a>;
+	vdda-0p9-supply = <&vreg_l4a>;
+
 	status = "okay";
 };
 
