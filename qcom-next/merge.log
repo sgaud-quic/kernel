@@ -1,0 +1,22 @@
+Verified existence of local and remote repos: Success
+/opt/actions-runner/_work/kernel-config-test/kernel-config-test/kernel-topics /opt/actions-runner/_work/kernel-config-test/kernel-config-test/kernel-topics
+Reuse-Recorded-Resolution: Enabled
+Downloaded shared rerere cache
+Local tree is clean
+Removing old remotes ...
+The remote kernel https://github.com/qualcomm-linux-stg/kernel.git is no longer tracked.
+Delete it [Y/n]? The remote origin https://github.com/qualcomm-linux/kernel-topics is no longer tracked.
+Delete it [Y/n]? The remote trovalds https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git is no longer tracked.
+Delete it [Y/n]? Done, removed 3 old remote(s).
+Adding new remotes...
+Done, added 0 new remote(s).
+Updating the remotes ...
+Done, updated 0 remote(s).
+Updating baseline ...
+fatal: no such remote or remote group: baseline
+latest tag/id is
+Done, updated baseline.
+Latest tag is 
+Create a new integration branch based on 
+Merging topic branches...
+Done, merged 0 topic(s).
