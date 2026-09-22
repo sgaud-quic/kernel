@@ -11,8 +11,8 @@ maintainers:
   - Konrad Dybcio <konradybcio@kernel.org>
 
 description:
-  dwmmac based Qualcomm ethernet devices which support Gigabit
-  ethernet (version v2.3.0 and onwards).
+  DWMAC and XGMAC based Qualcomm Ethernet devices supporting Gigabit and
+  multi-gigabit Ethernet.
 
 properties:
   compatible:
@@ -27,6 +27,7 @@ properties:
           - const: qcom,sa8775p-ethqos
       - enum:
           - qcom,qcs404-ethqos
+          - qcom,nord-ethqos
           - qcom,sa8775p-ethqos
           - qcom,sc8280xp-ethqos
           - qcom,shikra-ethqos
@@ -59,19 +60,40 @@ properties:
     maxItems: 6
 
   clock-names:
-    minItems: 4
-    items:
-      - const: stmmaceth
-      - const: pclk
-      - const: ptp_ref
-      - enum:
-          - rgmii
-          - phyaux
-      - const: axi-noc
-      - const: pcie-tile-axi-noc
+    oneOf:
+      - items:
+          - const: stmmaceth
+          - const: pclk
+          - const: ptp_ref
+          - enum:
+              - rgmii
+              - phyaux
+        minItems: 4
+        maxItems: 4
+      - items:
+          - const: stmmaceth
+          - const: pclk
+          - const: ptp_ref
+          - const: phyaux
+          - const: eee
+            description: |
+              Due to a hardware quirk, PCS link-up depends on the EEE clock
+              being enabled.
+        minItems: 5
+        maxItems: 5
+      - items:
+          - const: stmmaceth
+          - const: pclk
+          - const: ptp_ref
+          - const: rgmii
+          - const: axi-noc
+          - const: pcie-tile-axi-noc
+        minItems: 6
+        maxItems: 6
 
   iommus:
-    maxItems: 1
+    minItems: 1
+    maxItems: 10
 
   dma-coherent: true
 
@@ -122,17 +144,40 @@ allOf:
       required:
         - operating-points-v2
     else:
-      properties:
-        clocks:
-          maxItems: 4
-        clock-names:
-          items:
-            - const: stmmaceth
-            - const: pclk
-            - const: ptp_ref
-            - enum:
-                - rgmii
-                - phyaux
+      if:
+        properties:
+          compatible:
+            contains:
+              const: qcom,nord-ethqos
+      then:
+        properties:
+          clocks:
+            minItems: 5
+            maxItems: 5
+          clock-names:
+            minItems: 5
+            maxItems: 5
+          iommus:
+            minItems: 10
+            maxItems: 10
+        required:
+          - power-domains
+      else:
+        properties:
+          clocks:
+            maxItems: 4
+          clock-names:
+            minItems: 4
+            maxItems: 4
+            items:
+              - const: stmmaceth
+              - const: pclk
+              - const: ptp_ref
+              - enum:
+                  - rgmii
+                  - phyaux
+          iommus:
+            maxItems: 1
 
 unevaluatedProperties: false
 
