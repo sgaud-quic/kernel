@@ -44,7 +44,7 @@ tech/all/dt/pakala        9cdd195c9736e629a1051563b7eae5ca38e22c66         13
 tech/all/hawi             17d1dc3ec4d9bc10af1e075c960d45187a36c388         40
 tech/all/maili            c7b7e74ca9e881487a53c7e9ad18e0a9f428bbee          9
 tech/all/shikra           fc6960a53c6db10c98094d9a050e1a4719ac7d07        206
-tech/all/config           4dfbba1f146c0e2efd80f200c7d04957d168f1ca         89
+tech/all/config 68307b7d975eda470c697794163c512191a5e71c
 tech/overlay/dt           e3a5bec1a541fca07ea6203ef7372d1d775c9a49         99
 tech/all/workaround       ebc94067be183f4418b5f496e269d6eb11723bcb         14
 tech/noup/debug/all       9f1e8aefe2eaa112abe0bbb5e9f67284effa3d8d         37
